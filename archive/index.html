@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>WebBlox [DEMO]</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: #000;
+            overflow: hidden;
+        }
+
+        canvas#canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        #loading-text {
+            color: #fff;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+        }
+    </style>
+    <link rel="icon" href="data:,">
+    <script>if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./coi-serviceworker.js').then(function(reg) {
+      if (!crossOriginIsolated) { location.reload(); }
+    });
+  }</script>
+</head>
+<body>
+    <div id="loading"><span id="loading-text">Loading...</span></div>
+    <canvas id="canvas" oncontextmenu="return false"></canvas>
+    <script>(function () {
+    var loadingDiv  = document.getElementById('loading');
+    var loadingText = document.getElementById('loading-text');
+
+    document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+    console.log  = function () {};
+    console.warn = function () {};
+    console.info = function () {};
+    console.debug = function () {};
+
+    var CHUNK_COUNT = 12;
+    var loaded = 0;
+
+    var chunksPromise = Promise.all(
+      Array.from({ length: CHUNK_COUNT }, function (_, i) {
+        return fetch('rblx.data.' + i).then(function (r) {
+          if (!r.ok) throw new Error('chunk ' + i + ' failed');
+          return r.arrayBuffer().then(function (b) {
+            loaded++;
+            loadingText.textContent = 'Loading ' + Math.round(loaded / CHUNK_COUNT * 100) + '%';
+            return b;
+          });
+        });
+      })
+    ).then(function (chunks) {
+      var total = chunks.reduce(function (s, c) { return s + c.byteLength; }, 0);
+      var out   = new Uint8Array(total);
+      var off   = 0;
+      chunks.forEach(function (c) { out.set(new Uint8Array(c), off); off += c.byteLength; });
+      return URL.createObjectURL(new Blob([out], { type: 'application/octet-stream' }));
+    });
+
+    var _origFetch = window.fetch.bind(window);
+    window.fetch = function (resource, init) {
+      var url = (typeof resource === 'string') ? resource : (resource && resource.url) || '';
+      if (/rblx\.data$/.test(url)) {
+        return chunksPromise.then(function (blobUrl) { return _origFetch(blobUrl, init); });
+      }
+      return _origFetch(resource, init);
+    };
+
+    window.Module = {
+      canvas: document.getElementById('canvas'),
+      print:    function () {},
+      printErr: function (t) { if (/error|exception/i.test(t)) console.error('[rblx]', t); },
+      setStatus: function (t) {
+        if (!t) { loadingDiv.style.display = 'none'; return; }
+        var m = t.match(/\((\d+)\/(\d+)\)/);
+        if (m) {
+          var pct = Math.round(parseInt(m[1], 10) / parseInt(m[2], 10) * 100);
+          loadingText.textContent = 'Loading ' + pct + '%';
+        }
+      },
+      onRuntimeInitialized: function () { loadingDiv.style.display = 'none'; }
+    };
+
+    var s = document.createElement('script');
+    s.src = 'rblx.js';
+    document.body.appendChild(s);
+  })();</script>
+</body>
+</html>
