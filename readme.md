@@ -1,4 +1,4 @@
-# All Credit goes to the Ro16 (formerly WebBlox) Dev team (98Corbins, q8j, bread, chill. dude, and any others that are to join the group :)
+# All Credit goes to the Web '16 (formerly WebBlox) Dev team (98Corbins, q8j, bread, chill. dude, and any others that are to join the group :)
 
 
  I will try my best to keep this site up to date, and keep archives of all of the versions on this repository and saved locally just in case I get DMCA'ed or sum stupid shit
@@ -20,4 +20,4 @@ if on mac or linux: python3 -m http.server 8080
 ## step 6
 open up any web browser and type this:
 # http://localhost:8080
-it should load Ro16 (WebBlox)! Be sure to check back to this repository for updates and different instructions!
+it should load Web '16 (WebBlox)! Be sure to check back to this repository for updates and different instructions!
